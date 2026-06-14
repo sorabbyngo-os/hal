@@ -40,12 +40,19 @@ class AmbientContext:
 
 def build() -> AmbientContext:
     node_id = read_node_id()
+    # Suppress duplicate thermal logging — main.py poll loop already
+    # logs thermal state; avoid double-logging on every ambient build
+    import logging
+    _thermal_logger = logging.getLogger("hal.sensors.thermal")
+    _prev_level = _thermal_logger.level
+    _thermal_logger.setLevel(logging.ERROR + 1)
     bat  = battery.read()
     thm  = thermal.read()
     mem  = memory.read()
     cpu_ = cpu.read()
     sto  = storage.read()
     net  = network.read()
+    _thermal_logger.setLevel(_prev_level)
 
     def _s(obj):
         """Safe dataclass → dict, strip non-serializable."""
